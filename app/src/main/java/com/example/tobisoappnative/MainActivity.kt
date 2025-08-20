@@ -73,7 +73,7 @@ fun Tobiso() {
                 composable(
                     "search",
                 ) {
-                    SearchScreen()
+                    SearchScreen(navController = navController)
                 }
                 composable(
                     "more",

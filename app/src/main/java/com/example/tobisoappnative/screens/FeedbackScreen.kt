@@ -90,7 +90,7 @@ fun FeedbackScreen(navController: NavController) {
                 OutlinedTextField(
                     value = email,
                     onValueChange = {
-                        email = it
+                        email = it.trim()
                         resetStates()
                     },
                     label = { Text("Váš e-mail") },
