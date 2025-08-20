@@ -35,18 +35,19 @@ fun PostDetailScreen(
         loaded = true
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(postDetail?.title ?: "Detail příspěvku") },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Filled.ArrowBack, contentDescription = "Zpět")
-                    }
+    // ✅ Odstraněn Scaffold - padding se aplikuje z MainActivity
+    Column(
+        modifier = Modifier.fillMaxSize()
+    ) {
+        LargeTopAppBar(
+            title = { Text(postDetail?.title ?: "Detail příspěvku") },
+            navigationIcon = {
+                IconButton(onClick = { navController.popBackStack() }) {
+                    Icon(Icons.Filled.ArrowBack, contentDescription = "Zpět")
                 }
-            )
-        }
-    ) { innerPadding ->
+            }
+        )
+
         when {
             postDetailError != null -> {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = androidx.compose.ui.Alignment.Center) {
@@ -61,11 +62,10 @@ fun PostDetailScreen(
             else -> {
                 Column(
                     modifier = Modifier
-                        .padding(innerPadding)
+                        .fillMaxSize()
                         .padding(16.dp)
                         .verticalScroll(rememberScrollState())
                 ) {
-                    Text(text = postDetail?.title ?: "", style = MaterialTheme.typography.headlineSmall)
                     Spacer(modifier = Modifier.height(8.dp))
                     postDetail?.content?.let { content ->
                         val fixedContent = content.replace(Regex("!\\[(.*?)]\\((images/[^)]+)\\)")) {
@@ -78,9 +78,25 @@ fun PostDetailScreen(
                         }
                     }
                     Spacer(modifier = Modifier.height(16.dp))
-                    Text(text = "Vytvořeno: ${postDetail?.createdAt}", style = MaterialTheme.typography.bodySmall)
-                    postDetail?.updatedAt?.let {
-                        Text(text = "Upraveno: $it", style = MaterialTheme.typography.bodySmall)
+                    val locale = java.util.Locale("cs", "CZ")
+                    val formatter = SimpleDateFormat("dd. MM. yyyy 'v' HH:mm", locale)
+                    val createdFormatted = postDetail?.createdAt?.let {
+                        try {
+                            formatter.format(it)
+                        } catch (e: Exception) {
+                            ""
+                        }
+                    } ?: ""
+                    val updatedFormatted = postDetail?.updatedAt?.let {
+                        try {
+                            formatter.format(it)
+                        } catch (e: Exception) {
+                            ""
+                        }
+                    } ?: ""
+                    Text(text = "Vytvořeno: $createdFormatted", style = MaterialTheme.typography.bodySmall)
+                    if (updatedFormatted.isNotBlank()) {
+                        Text(text = "Upraveno: $updatedFormatted", style = MaterialTheme.typography.bodySmall)
                     }
                     postDetail?.filePath.takeIf { !it.isNullOrBlank() }?.let {
                         Spacer(modifier = Modifier.height(16.dp))

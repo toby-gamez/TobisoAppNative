@@ -46,16 +46,17 @@ fun CategoryListScreen(
         parentCategory?.id?.let { viewModel.loadPosts(it) }
     }
 
-    Scaffold(
-        topBar = {
-            LargeTopAppBar(
-                title = { Text("$parentCategoryNameState") },
-                colors = TopAppBarDefaults.largeTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
+    // ✅ Odstraněn Scaffold - padding se aplikuje z MainActivity
+    Column(
+        modifier = Modifier.fillMaxSize()
+    ) {
+        LargeTopAppBar(
+            title = { Text("$parentCategoryNameState") },
+            colors = TopAppBarDefaults.largeTopAppBarColors(
+                containerColor = MaterialTheme.colorScheme.surface
             )
-        }
-    ) { innerPadding ->
+        )
+
         if (showConnectionError) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = androidx.compose.ui.Alignment.Center) {
                 Column(horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally) {
@@ -86,9 +87,7 @@ fun CategoryListScreen(
             }
         } else {
             LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding)
+                modifier = Modifier.fillMaxSize()
             ) {
                 items(filteredCategories) { category ->
                     Card(

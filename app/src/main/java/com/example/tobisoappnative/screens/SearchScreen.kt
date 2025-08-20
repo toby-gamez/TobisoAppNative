@@ -17,24 +17,21 @@ fun SearchScreen() {
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     val isDark = isSystemInDarkTheme()
 
-    Scaffold(
-        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
-        topBar = {
-            LargeTopAppBar(
-                title = { Text("Vyhledávání") },
-                scrollBehavior = scrollBehavior
-            )
-        }
-    ) { innerPadding ->
+    // ✅ Odstraněn Scaffold - padding se aplikuje z MainActivity
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .nestedScroll(scrollBehavior.nestedScrollConnection)
+    ) {
+        LargeTopAppBar(
+            title = { Text("Vyhledávání", style = MaterialTheme.typography.titleLarge) },
+            scrollBehavior = scrollBehavior,
+        )
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(
-                    start = 8.dp,
-                    end = 8.dp,
-                    top = innerPadding.calculateTopPadding() + 8.dp,
-                    bottom = innerPadding.calculateBottomPadding() + 8.dp
-                ),
+                .padding(8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {

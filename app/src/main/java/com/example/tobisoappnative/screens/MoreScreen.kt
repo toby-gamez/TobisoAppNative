@@ -1,42 +1,129 @@
 package com.example.tobisoappnative.screens
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.unit.dp
+import com.example.tobisoappnative.viewmodel.MainViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.tobisoappnative.model.Category
+import com.example.tobisoappnative.model.Post
+import androidx.compose.runtime.getValue
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Description
+import androidx.navigation.NavController
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MoreScreen() {
+fun MoreScreen(navController: NavController, viewModel: MainViewModel = viewModel()) {
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
-    val isDark = isSystemInDarkTheme()
+    val categoriesState = viewModel.categories.collectAsState()
+    val postsState = viewModel.posts.collectAsState()
+    val categories: List<Category> = categoriesState.value
+    val posts: List<Post> = postsState.value
 
-    Scaffold(
-        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
-        topBar = {
-            LargeTopAppBar(
-                title = { Text("Více") },
-                scrollBehavior = scrollBehavior
-            )
-        }
-    ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(
-                    start = 8.dp,
-                    end = 8.dp,
-                    top = innerPadding.calculateTopPadding() + 8.dp,
-                    bottom = innerPadding.calculateBottomPadding() + 8.dp
-                ),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+    // ID kategorie "Other" je 42
+    val otherCategoryId: Int = 42
+    val filteredPosts = posts.filter { it.categoryId == otherCategoryId }
+
+    LaunchedEffect(Unit) {
+        viewModel.loadPosts(otherCategoryId)
+    }
+
+    // ✅ Odstraněn Scaffold - padding se aplikuje z MainActivity
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .nestedScroll(scrollBehavior.nestedScrollConnection)
+    ) {
+        LargeTopAppBar(
+            title = { Text("Více", style = MaterialTheme.typography.titleLarge) },
+            scrollBehavior = scrollBehavior
+        )
+
+        LazyColumn(
+            modifier = Modifier.fillMaxSize()
         ) {
-            // Obsah obrazovky Více
+            // Tlačítko pro zpětnou vazbu jako Card
+            item {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(8.dp)
+                        .clickable { navController.navigate("feedback") },
+                    elevation = CardDefaults.cardElevation(4.dp)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text("Zpětná vazba", style = MaterialTheme.typography.titleMedium)
+                            Text("Napište nám, co byste chtěli změnit nebo vylepšit.", style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
+                }
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(8.dp)
+                        .clickable { navController.navigate("about") },
+                    elevation = CardDefaults.cardElevation(4.dp)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text("O aplikaci", style = MaterialTheme.typography.titleMedium)
+                            Text("Všechno o aplikaci", style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
+                }
+            }
+
+            if (!filteredPosts.isEmpty()) {
+                items(filteredPosts) { post ->
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(8.dp)
+                            .clickable { navController.navigate("postDetail/${post.id}") },
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                    ) {
+                        Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Column {
+                                Text(text = post.title, style = MaterialTheme.typography.titleMedium)
+                                val updated = post.updatedAt
+                                val formatted = updated?.let {
+                                    try {
+                                        val formatter = java.text.SimpleDateFormat("dd. MM. yyyy 'v' HH:mm", java.util.Locale("cs", "CZ"))
+                                        formatter.format(it)
+                                    } catch (e: Exception) {
+                                        ""
+                                    }
+                                } ?: ""
+                                if (formatted.isNotBlank()) {
+                                    Text(text = "Upraveno: $formatted", style = MaterialTheme.typography.bodySmall)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }

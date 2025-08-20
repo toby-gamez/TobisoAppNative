@@ -109,49 +109,48 @@ fun HomeScreen(navController: NavController) {
     val viewModel: MainViewModel = viewModel()
     val categories by viewModel.categories.collectAsState()
     LaunchedEffect(Unit) { viewModel.loadCategories() }
-    Scaffold(
-        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
-        topBar = {
-            LargeTopAppBar(
-                title = {
-                    Image(
-                        painter = painterResource(id = logoRes),
-                        contentDescription = "Logo",
-                        modifier = Modifier.size(120.dp)
-                    )
-                },
-                scrollBehavior = scrollBehavior
-            )
-        }
-    ) { innerPadding ->
-        Column(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
-            LazyVerticalGrid(
-                state = gridState,
-                columns = GridCells.Fixed(columnCount),
-                contentPadding = PaddingValues(
-                    start = 8.dp,
-                    end = 8.dp,
-                    top = 8.dp,
-                    bottom = 8.dp
-                ),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f)
-            ) {
-                items(subjects) { subject ->
-                    SubjectCard(
-                        subject = subject,
-                        modifier = Modifier,
-                        onClick = {
-                            val category = categories.find { it.name == subject.name }
-                            category?.let {
-                                navController.navigate("categoryList/${it.name}")
-                            }
+
+    // ✅ Odstraněn Scaffold - padding se aplikuje z MainActivity
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .nestedScroll(scrollBehavior.nestedScrollConnection)
+    ) {
+        LargeTopAppBar(
+            title = {
+                Image(
+                    painter = painterResource(id = logoRes),
+                    contentDescription = "Logo",
+                    modifier = Modifier.size(150.dp)
+                )
+            },
+            scrollBehavior = scrollBehavior
+        )
+
+        LazyVerticalGrid(
+            state = gridState,
+            columns = GridCells.Fixed(columnCount),
+            contentPadding = PaddingValues(
+                start = 8.dp,
+                end = 8.dp,
+                top = 8.dp,
+                bottom = 8.dp
+            ),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.fillMaxSize()
+        ) {
+            items(subjects) { subject ->
+                SubjectCard(
+                    subject = subject,
+                    modifier = Modifier,
+                    onClick = {
+                        val category = categories.find { it.name == subject.name }
+                        category?.let {
+                            navController.navigate("categoryList/${it.name}")
                         }
-                    )
-                }
+                    }
+                )
             }
         }
     }
