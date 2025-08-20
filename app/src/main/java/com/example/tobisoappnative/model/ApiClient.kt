@@ -1,5 +1,12 @@
 package com.example.tobisoappnative.model
 
+import com.google.gson.GsonBuilder
+import com.google.gson.TypeAdapter
+import com.google.gson.stream.JsonReader
+import com.google.gson.stream.JsonWriter
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import okhttp3.Credentials
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -10,11 +17,13 @@ import javax.net.ssl.*
 object ApiClient {
     private const val BASE_URL = "https://10.0.2.2:7270/api/"
 
+    // Přihlašovací údaje natvrdo
+    private const val USERNAME = "admin"
+    private const val PASSWORD = "secret123"
+
     // Trust all certificates (pouze pro vývoj!)
     private fun getUnsafeOkHttpClient(): OkHttpClient {
-        val username = "admin" // ZDE ZADEJ SVÉ JMÉNO
-        val password = "secret123" // ZDE ZADEJ SVÉ HESLO
-        val credential = Credentials.basic(username, password)
+        val credential = Credentials.basic(USERNAME, PASSWORD)
         return try {
             val trustAllCerts = arrayOf<TrustManager>(object : X509TrustManager {
                 override fun checkClientTrusted(chain: Array<java.security.cert.X509Certificate>, authType: String) {}
@@ -32,9 +41,8 @@ object ApiClient {
                     .addHeader("Authorization", credential)
                     .build()
                 val response = chain.proceed(request)
-                // Při HTTP chybě loguj pouze kód a zprávu, NE tělo odpovědi
                 if (!response.isSuccessful) {
-                    android.util.Log.e("ApiClient", "HTTP error: ${response.code()} ${response.message()}")
+                    android.util.Log.e("ApiClient", "HTTP error: ${response.code} ${response.message}")
                 }
                 response
             }
@@ -45,10 +53,22 @@ object ApiClient {
     }
 
     val apiService: ApiService by lazy {
+        val gsonBuilder = GsonBuilder()
+        gsonBuilder.registerTypeAdapter(Date::class.java, object : TypeAdapter<Date>() {
+            private val format = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSSSSS", Locale.getDefault())
+            override fun write(out: JsonWriter, value: Date?) {
+                if (value == null) out.nullValue() else out.value(format.format(value))
+            }
+            override fun read(reader: JsonReader): Date? {
+                val str = reader.nextString()
+                return try { format.parse(str) } catch (e: Exception) { null }
+            }
+        })
+        val gson = gsonBuilder.create()
         Retrofit.Builder()
             .baseUrl(BASE_URL)
             .client(getUnsafeOkHttpClient())
-            .addConverterFactory(GsonConverterFactory.create())
+            .addConverterFactory(GsonConverterFactory.create(gson))
             .build()
             .create(ApiService::class.java)
     }

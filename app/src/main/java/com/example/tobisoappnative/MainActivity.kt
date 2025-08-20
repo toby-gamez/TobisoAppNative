@@ -51,6 +51,14 @@ fun MyApp() {
                     val categoryName = backStackEntry.arguments?.getString("categoryName") ?: ""
                     CategoryListScreen(parentCategoryName = categoryName, navController = navController)
                 }
+                composable("postDetail/{postId}") { backStackEntry ->
+                    val postId = backStackEntry.arguments?.getString("postId")?.toIntOrNull()
+                    if (postId != null) {
+                        com.example.tobisoappnative.screens.PostDetailScreen(postId = postId, navController = navController)
+                    } else {
+                        Text("Chybný postId", color = MaterialTheme.colorScheme.error)
+                    }
+                }
             }
         }
     }

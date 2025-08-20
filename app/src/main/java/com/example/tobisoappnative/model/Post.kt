@@ -7,8 +7,7 @@ data class Post(
     val title: String,
     val content: String,
     val filePath: String,
-    val createdAt: Date,
+    val createdAt: Date?,
     val updatedAt: Date?,
     val categoryId: Int?,
-    val category: Category?
 )
