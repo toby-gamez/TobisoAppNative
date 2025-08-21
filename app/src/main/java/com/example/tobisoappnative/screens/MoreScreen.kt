@@ -93,6 +93,25 @@ fun MoreScreen(navController: NavController, viewModel: MainViewModel = viewMode
                         }
                     }
                 }
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(8.dp)
+                        .clickable { navController.navigate("changelog") },
+                    elevation = CardDefaults.cardElevation(4.dp)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text("Deník změn", style = MaterialTheme.typography.titleMedium)
+                            Text("Všechno důležité, co bylo změněno", style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
+                }
             }
 
             if (!filteredPosts.isEmpty()) {
