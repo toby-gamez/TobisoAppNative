@@ -1,5 +1,6 @@
 package com.example.tobisoappnative.screens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -77,65 +78,47 @@ fun PostDetailScreen(
                 ) {
                     Spacer(modifier = Modifier.height(8.dp))
                     postDetail?.content?.let { content ->
-                        val fixedContent = content.replace(Regex("!\\[(.*?)]\\((images/[^)]+)\\)")) {
+                        val imageRegex = Regex("!\\[(.*?)]\\((images/[^)]+)\\)")
+                        val blockRegex = Regex("\\.\\.\\.\\s*([\\s\\S]*?)\\s*\\.\\.\\.")
+                        // Nejprve nahradíme obrázky
+                        var processedContent = content.replace(imageRegex) {
                             val alt = it.groupValues[1]
                             val path = it.groupValues[2]
                             "![${alt}](https://tobiso.com/${path})"
                         }
-                        // Regex pro odkazy v Markdownu
-                        val linkRegex = Regex("\\[(.+?)\\]\\((.+?)\\)")
-                        val matches = linkRegex.findAll(fixedContent).toList()
+                        // Najdeme všechny bloky, které byly obaleny ...text...
+                        val matches = blockRegex.findAll(processedContent).toList()
                         if (matches.isEmpty()) {
-                            RichText { Markdown(fixedContent) }
+                            RichText { Markdown(processedContent.replace(blockRegex, "$1")) }
                         } else {
                             var lastIndex = 0
                             Column {
                                 for (match in matches) {
                                     val start = match.range.first
                                     val end = match.range.last + 1
-                                    // Text před odkazem
+                                    // Text před blokem
                                     if (start > lastIndex) {
-                                        val before = fixedContent.substring(lastIndex, start)
+                                        val before = processedContent.substring(lastIndex, start)
                                         RichText { Markdown(before) }
                                     }
-                                    // Odkaz
-                                    val linkText = match.groupValues[1]
-                                    val url = match.groupValues[2]
-                                    var fileName = url
-                                    if (fileName.endsWith(".html")) fileName = fileName.removeSuffix(".html") + ".md"
-                                    fileName = fileName.replace(prefixRegex, "")
-                                    if (!fileName.startsWith("/")) fileName = "/$fileName"
-                                    ClickableText(
-                                        text = AnnotatedString(linkText),
-                                        style = MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.primary),
-                                        onClick = {
-                                            coroutineScope.launch {
-                                                try {
-                                                    val postsApi = ApiClient.apiService.getPosts()
-                                                    val post = postsApi.find { it.filePath == fileName }
-                                                    if (post != null) {
-                                                        navController.navigate("postDetail/${post.id}")
-                                                        showError = false
-                                                    } else {
-                                                        errorText = "Soubor '$fileName' nebyl nalezen."
-                                                        showError = true
-                                                    }
-                                                } catch (e: Exception) {
-                                                    errorText = "Chyba při načítání postů: ${e.message}"
-                                                    showError = true
-                                                }
-                                            }
-                                        }
-                                    )
-
+                                    // Zvýrazněný blok
+                                    val blockText = match.groupValues[1]
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(vertical = 4.dp)
+                                            .background(MaterialTheme.colorScheme.surfaceVariant, shape = MaterialTheme.shapes.medium)
+                                            .padding(8.dp)
+                                    ) {
+                                        RichText { Markdown(blockText) }
+                                    }
                                     lastIndex = end
                                 }
-                                // Zbytek textu za posledním odkazem
-                                if (lastIndex < fixedContent.length) {
-                                    val after = fixedContent.substring(lastIndex)
+                                // Zbytek textu za posledním blokem
+                                if (lastIndex < processedContent.length) {
+                                    val after = processedContent.substring(lastIndex)
                                     RichText { Markdown(after) }
                                 }
-                                // Snackbar mimo cyklus, zobrazí se pouze jednou
                             }
                         }
                     }
