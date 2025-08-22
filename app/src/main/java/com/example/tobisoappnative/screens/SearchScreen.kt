@@ -22,12 +22,14 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.SpanStyle
 import androidx.navigation.NavController
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.rememberScrollState
+import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SearchScreen(navController: NavController) {
+fun SearchScreen(navController: NavController, searchRequestFocus: androidx.compose.runtime.MutableState<Boolean>) {
     var searchText by remember { mutableStateOf("") }
     var isSearchActive by remember { mutableStateOf(false) }
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
@@ -35,13 +37,17 @@ fun SearchScreen(navController: NavController) {
     var categories by remember { mutableStateOf(listOf<Category>()) }
     var isLoading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
-
     var debouncedSearchText by remember { mutableStateOf("") }
 
+    // Funce pro zvýraznění textu
+    @Composable
     fun highlightText(text: String, query: String): AnnotatedString {
         if (query.isBlank()) return AnnotatedString(text)
         val lowerText = text.lowercase()
         val lowerQuery = query.lowercase()
+        val isDark = isSystemInDarkTheme()
+        val highlightBackground = if (isDark) MaterialTheme.colorScheme.secondaryContainer else Color.Yellow
+        val highlightTextColor = if (isDark) MaterialTheme.colorScheme.onSecondaryContainer else Color.Black
         val builder = buildAnnotatedString {
             var i = 0
             while (i < text.length) {
@@ -51,7 +57,7 @@ fun SearchScreen(navController: NavController) {
                     break
                 }
                 append(text.substring(i, idx))
-                withStyle(SpanStyle(background = Color.Yellow)) {
+                withStyle(SpanStyle(background = highlightBackground, color = highlightTextColor)) {
                     append(text.substring(idx, idx + query.length))
                 }
                 i = idx + query.length
@@ -61,6 +67,7 @@ fun SearchScreen(navController: NavController) {
     }
 
     // Vrátí úryvek z content s kontextem kolem hledaného výrazu a zvýrazněním
+    @Composable
     fun getSnippetWithHighlight(content: String, query: String, contextLen: Int = 40, fallbackLen: Int = 80): AnnotatedString {
         if (query.isBlank()) return AnnotatedString(content.take(fallbackLen))
         val lowerContent = content.lowercase()
@@ -100,7 +107,7 @@ fun SearchScreen(navController: NavController) {
 
     // Debounce pro vyhledávání
     LaunchedEffect(searchText) {
-        kotlinx.coroutines.delay(400)
+        delay(400)
         debouncedSearchText = searchText
     }
 
@@ -134,12 +141,10 @@ fun SearchScreen(navController: NavController) {
             SearchBar(
                 query = searchText,
                 onQueryChange = { searchText = it },
-                onSearch = {
-                    isSearchActive = false
-                },
+                onSearch = { isSearchActive = false },
                 active = isSearchActive,
                 onActiveChange = { isSearchActive = it },
-                placeholder = { Text("Vyhledat předmět...") },
+                placeholder = { Text("Vyhledat kategorii nebo obsah článku...") },
                 modifier = Modifier.fillMaxWidth()
             ) {
                 // Výsledky hledání realtime

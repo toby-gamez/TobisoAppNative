@@ -97,6 +97,7 @@ fun MyApp() {
     }
 
     TobisoAppNativeTheme {
+        val searchRequestFocus = remember { mutableStateOf(false) }
         // Zobrazit toast s kolečkem, pokud není připojení nebo nejsou načteny kategorie
         if (!isConnected.value) {
             NoInternetScreen(onRetry = onRetry)
@@ -118,7 +119,7 @@ fun MyApp() {
                         enter = slideInVertically(initialOffsetY = { it }), // slide-up
                         exit = slideOutVertically(targetOffsetY = { it })   // slide-down
                     ) {
-                        BottomBar(navController)
+                        BottomBar(navController, searchRequestFocus)
                     }
                 }
             ) { paddingValues ->
@@ -135,7 +136,7 @@ fun MyApp() {
                     composable(
                         "search",
                     ) {
-                        SearchScreen(navController = navController)
+                        SearchScreen(navController = navController, searchRequestFocus = searchRequestFocus)
                     }
                     composable(
                         "more",
@@ -230,7 +231,7 @@ fun LoadingToast(timeout: Boolean) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.3f)),
+            .background(Color.Black.copy(alpha = 0.5f)), // tmavší overlay
         contentAlignment = Alignment.Center
     ) {
         Column(

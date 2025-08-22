@@ -12,10 +12,8 @@ import androidx.navigation.NavController
 import com.example.tobisoappnative.viewmodel.MainViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.runtime.Composable
-import coil.compose.AsyncImage
 import com.halilibo.richtext.commonmark.Markdown
 import com.halilibo.richtext.ui.material3.RichText
-import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.remember
@@ -26,6 +24,7 @@ import androidx.compose.foundation.text.ClickableText
 import androidx.compose.ui.text.AnnotatedString
 import com.example.tobisoappnative.model.ApiClient
 import kotlinx.coroutines.launch
+import androidx.compose.ui.text.style.TextAlign
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -78,43 +77,112 @@ fun PostDetailScreen(
                 ) {
                     Spacer(modifier = Modifier.height(8.dp))
                     postDetail?.content?.let { content ->
-                        val imageRegex = Regex("!\\[(.*?)]\\((images/[^)]+)\\)")
-                        val blockRegex = Regex("\\.\\.\\.\\s*([\\s\\S]*?)\\s*\\.\\.\\.")
                         // Nejprve nahradíme obrázky
+                        val imageRegex = Regex("!\\[(.*?)]\\((images/[^)]+)\\)")
                         var processedContent = content.replace(imageRegex) {
                             val alt = it.groupValues[1]
                             val path = it.groupValues[2]
                             "![${alt}](https://tobiso.com/${path})"
                         }
-                        // Najdeme všechny bloky, které byly obaleny ...text...
-                        val matches = blockRegex.findAll(processedContent).toList()
-                        if (matches.isEmpty()) {
-                            RichText { Markdown(processedContent.replace(blockRegex, "$1")) }
+
+                        // Najdeme zvýrazněné bloky ...text...
+                        val blockRegex = Regex("\\.\\.\\.\\s*([\\s\\S]*?)\\s*\\.\\.\\.")
+                        val blockMatches = blockRegex.findAll(processedContent).toList()
+
+                        // Najdeme odkazy [text](url) ale ne obrázky ![alt](url)
+                        val linkRegex = Regex("(?<!!)\\[(.+?)\\]\\((.+?)\\)")
+                        val linkMatches = linkRegex.findAll(processedContent).toList()
+
+                        // Kombinujeme všechny matches a seřadíme podle pozice
+                        val allMatches = (blockMatches.map {
+                            Triple(it.range.first, it.range.last + 1, "block" to it)
+                        } + linkMatches.map {
+                            Triple(it.range.first, it.range.last + 1, "link" to it)
+                        }).sortedBy { it.first }
+
+                        if (allMatches.isEmpty()) {
+                            RichText { Markdown(processedContent) }
                         } else {
                             var lastIndex = 0
                             Column {
-                                for (match in matches) {
-                                    val start = match.range.first
-                                    val end = match.range.last + 1
-                                    // Text před blokem
+                                for ((start, end, typeAndMatch) in allMatches) {
+                                    // Text před aktuálním elementem
                                     if (start > lastIndex) {
                                         val before = processedContent.substring(lastIndex, start)
                                         RichText { Markdown(before) }
                                     }
-                                    // Zvýrazněný blok
-                                    val blockText = match.groupValues[1]
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(vertical = 4.dp)
-                                            .background(MaterialTheme.colorScheme.surfaceVariant, shape = MaterialTheme.shapes.medium)
-                                            .padding(8.dp)
-                                    ) {
-                                        RichText { Markdown(blockText) }
+
+                                    when (typeAndMatch.first) {
+                                        "block" -> {
+                                            // Zvýrazněný blok
+                                            val match = typeAndMatch.second as MatchResult
+                                            val blockText = match.groupValues[1]
+                                            Box(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .padding(vertical = 4.dp)
+                                                    .background(
+                                                        MaterialTheme.colorScheme.surfaceVariant,
+                                                        shape = MaterialTheme.shapes.medium
+                                                    )
+                                                    .padding(8.dp)
+                                            ) {
+                                                RichText { Markdown(blockText) }
+                                            }
+                                        }
+                                        "link" -> {
+                                            // Klikatelný odkaz
+                                            val match = typeAndMatch.second as MatchResult
+                                            val linkText = match.groupValues[1]
+                                            val url = match.groupValues[2]
+                                            var fileName = url
+                                            if (fileName.endsWith(".html")) fileName = fileName.removeSuffix(".html") + ".md"
+                                            fileName = fileName.replace(prefixRegex, "")
+                                            if (!fileName.startsWith("/")) fileName = "/$fileName"
+
+                                            ClickableText(
+                                                text = AnnotatedString(linkText),
+                                                style = MaterialTheme.typography.bodyMedium.copy(
+                                                    color = MaterialTheme.colorScheme.primary
+                                                ),
+                                                onClick = {
+                                                    coroutineScope.launch {
+                                                        try {
+                                                            val postsApi = ApiClient.apiService.getPosts()
+                                                            val post = postsApi.find { it.filePath == fileName }
+                                                            if (post != null) {
+                                                                navController.navigate("postDetail/${post.id}")
+                                                                showError = false
+                                                            } else {
+                                                                if (url.contains("http")) {
+                                                                    // Otevřít v prohlížeči
+                                                                    val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(url))
+                                                                    intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                                                                    try {
+                                                                        navController.context.startActivity(intent)
+                                                                        showError = false
+                                                                    } catch (e: Exception) {
+                                                                        errorText = "Nelze otevřít odkaz: ${e.message}"
+                                                                        showError = true
+                                                                    }
+                                                                } else {
+                                                                    errorText = "Soubor '$fileName' nebyl nalezen."
+                                                                    showError = true
+                                                                }
+                                                            }
+                                                        } catch (e: Exception) {
+                                                            errorText = "Chyba při načítání postů: ${e.message}"
+                                                            showError = true
+                                                        }
+                                                    }
+                                                }
+                                            )
+                                        }
                                     }
                                     lastIndex = end
                                 }
-                                // Zbytek textu za posledním blokem
+
+                                // Zbytek textu za posledním elementem
                                 if (lastIndex < processedContent.length) {
                                     val after = processedContent.substring(lastIndex)
                                     RichText { Markdown(after) }
@@ -139,9 +207,9 @@ fun PostDetailScreen(
                             ""
                         }
                     } ?: ""
-                    Text(text = "Vytvořeno: $createdFormatted", style = MaterialTheme.typography.bodySmall)
+                    Text(text = "Vytvořeno: $createdFormatted", style = MaterialTheme.typography.bodySmall, textAlign = TextAlign.Start)
                     if (updatedFormatted.isNotBlank()) {
-                        Text(text = "Upraveno: $updatedFormatted", style = MaterialTheme.typography.bodySmall)
+                        Text(text = "Upraveno: $updatedFormatted", style = MaterialTheme.typography.bodySmall, textAlign = TextAlign.Start)
                     }
                     postDetail?.filePath.takeIf { !it.isNullOrBlank() }?.let {
                         Spacer(modifier = Modifier.height(16.dp))
@@ -155,11 +223,11 @@ fun PostDetailScreen(
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = androidx.compose.ui.Alignment.BottomCenter) {
                 Snackbar(
                     action = {
-                        TextButton(onClick = { showError = false }) { Text("Zavřít") }
+                        TextButton(onClick = { showError = false }) { Text("Zavřít", textAlign = TextAlign.Start) }
                     },
                     modifier = Modifier.padding(8.dp)
                 ) {
-                    Text(errorText)
+                    Text(errorText, textAlign = TextAlign.Start)
                 }
             }
         }

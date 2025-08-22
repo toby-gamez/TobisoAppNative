@@ -1,5 +1,6 @@
 package com.example.tobisoappnative.screens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -15,7 +16,9 @@ import androidx.compose.material.icons.filled.CloudOff
 @Composable
 fun NoInternetScreen(onRetry: () -> Unit) {
     Box(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background),
         contentAlignment = Alignment.Center
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -34,10 +37,17 @@ fun NoInternetScreen(onRetry: () -> Unit) {
             Spacer(modifier = Modifier.height(16.dp))
             Text(
                 text = "Zkontrolujte své připojení a zkuste to znovu.",
-                fontSize = 16.sp
+                fontSize = 16.sp,
+                color = MaterialTheme.colorScheme.onBackground // lepší čitelnost
             )
             Spacer(modifier = Modifier.height(32.dp))
-            Button(onClick = onRetry) {
+            Button(
+                onClick = onRetry,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                )
+            ) {
                 Text("Obnovit")
             }
         }

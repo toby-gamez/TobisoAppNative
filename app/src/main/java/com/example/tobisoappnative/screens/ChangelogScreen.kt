@@ -26,7 +26,13 @@ import androidx.compose.ui.text.withStyle
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChangelogScreen(navController: NavController) {
-
+    val version1_4 = listOf(
+        "opraveny tabulky",
+        "opraveny intra a linky, přidána podpora pro weblinky",
+        "opraveno číslo verze v android 'O aplikaci'",
+        "opraven tmavý režim v některých elementech a obrazovkách",
+        "upraveny popisy předmětů a vyhledávání",
+    )
     val version1_3 = listOf(
         "přidán deník změn",
         "přidáno vyhledávání",
@@ -66,10 +72,11 @@ fun ChangelogScreen(navController: NavController) {
             val context = LocalContext.current
 
             val annotatedText = buildAnnotatedString {
-                append("Github ")
-
+                withStyle(style = SpanStyle(color = MaterialTheme.colorScheme.onBackground)) {
+                    append("Github ")
+                }
                 pushStringAnnotation(tag = "URL", annotation = "https://github.com/toby-gamez/TobisoAppNative")
-                withStyle(style = SpanStyle(color = Color.Blue, fontWeight = FontWeight.Bold)) {
+                withStyle(style = SpanStyle(color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)) {
                     append("zde")
                 }
                 pop()
@@ -88,6 +95,12 @@ fun ChangelogScreen(navController: NavController) {
                         }
                 }
             )
+            Text("Verze 1.4", style = typography.headlineSmall, modifier = Modifier.padding(bottom = 4.dp))
+            version1_4.forEach { item ->
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(start = 16.dp)) {
+                    Text("• $item", style = typography.bodyLarge)
+                }
+            }
             Text("Verze 1.3", style = typography.headlineSmall, modifier = Modifier.padding(bottom = 4.dp))
             version1_3.forEach { item ->
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(start = 16.dp)) {
