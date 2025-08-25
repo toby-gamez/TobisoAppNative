@@ -21,6 +21,7 @@ import java.text.SimpleDateFormat
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.collectAsState
 import androidx.compose.foundation.text.ClickableText
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.ui.text.AnnotatedString
 import com.example.tobisoappnative.model.ApiClient
 import kotlinx.coroutines.launch
@@ -101,7 +102,9 @@ fun PostDetailScreen(
                         }).sortedBy { it.first }
 
                         if (allMatches.isEmpty()) {
-                            RichText { Markdown(processedContent) }
+                            SelectionContainer {
+                                RichText { Markdown(processedContent) }
+                            }
                         } else {
                             var lastIndex = 0
                             Column {
@@ -109,7 +112,9 @@ fun PostDetailScreen(
                                     // Text před aktuálním elementem
                                     if (start > lastIndex) {
                                         val before = processedContent.substring(lastIndex, start)
-                                        RichText { Markdown(before) }
+                                        SelectionContainer {
+                                            RichText { Markdown(before) }
+                                        }
                                     }
 
                                     when (typeAndMatch.first) {
@@ -127,7 +132,9 @@ fun PostDetailScreen(
                                                     )
                                                     .padding(8.dp)
                                             ) {
-                                                RichText { Markdown(blockText) }
+                                                SelectionContainer {
+                                                    RichText { Markdown(blockText) }
+                                                }
                                             }
                                         }
                                         "link" -> {
@@ -139,7 +146,6 @@ fun PostDetailScreen(
                                             if (fileName.endsWith(".html")) fileName = fileName.removeSuffix(".html") + ".md"
                                             fileName = fileName.replace(prefixRegex, "")
                                             if (!fileName.startsWith("/")) fileName = "/$fileName"
-
                                             ClickableText(
                                                 text = AnnotatedString(linkText),
                                                 style = MaterialTheme.typography.bodyMedium.copy(
@@ -185,7 +191,9 @@ fun PostDetailScreen(
                                 // Zbytek textu za posledním elementem
                                 if (lastIndex < processedContent.length) {
                                     val after = processedContent.substring(lastIndex)
-                                    RichText { Markdown(after) }
+                                    SelectionContainer {
+                                        RichText { Markdown(after) }
+                                    }
                                 }
                             }
                         }

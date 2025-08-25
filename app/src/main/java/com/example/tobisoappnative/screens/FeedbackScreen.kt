@@ -71,7 +71,7 @@ fun FeedbackScreen(navController: NavController) {
                 .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text("Pokud najdete jakoukoli chybu v textu, můžete mi to tady poslat, pokud bystě měli otázku, také mi to sem napište. Velmi mě zajímá vaše zpětná vazba ☺.", style = MaterialTheme.typography.bodyMedium)
+            Text("Pokud najdete jakoukoli chybu v textu, můžete mi to tady poslat, pokud byste měli otázku, také mi to sem napište. Velmi mě zajímá vaše zpětná vazba ☺.", style = MaterialTheme.typography.bodyMedium)
             Spacer(modifier = Modifier.height(24.dp))
             if (isSuccess) {
                 Text("Děkujeme! Vaše zpětná vazba byla úspěšně odeslána.", color = MaterialTheme.colorScheme.primary)

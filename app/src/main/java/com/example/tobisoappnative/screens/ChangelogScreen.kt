@@ -26,6 +26,9 @@ import androidx.compose.ui.text.withStyle
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChangelogScreen(navController: NavController) {
+    val version1_5 = listOf(
+        "text se již dá vybírat a kopírovat (včetně intra a článků)",
+    )
     val version1_4 = listOf(
         "opraveny tabulky",
         "opraveny intra a linky, přidána podpora pro weblinky",
@@ -95,6 +98,12 @@ fun ChangelogScreen(navController: NavController) {
                         }
                 }
             )
+            Text("Verze 1.5", style = typography.headlineSmall, modifier = Modifier.padding(bottom = 4.dp))
+            version1_5.forEach { item ->
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(start = 16.dp)) {
+                    Text("• $item", style = typography.bodyLarge)
+                }
+            }
             Text("Verze 1.4", style = typography.headlineSmall, modifier = Modifier.padding(bottom = 4.dp))
             version1_4.forEach { item ->
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(start = 16.dp)) {
