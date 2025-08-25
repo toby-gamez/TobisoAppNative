@@ -141,11 +141,15 @@ fun PostDetailScreen(
                                             // Klikatelný odkaz
                                             val match = typeAndMatch.second as MatchResult
                                             val linkText = match.groupValues[1]
-                                            val url = match.groupValues[2]
+                                            var url = match.groupValues[2]
                                             var fileName = url
                                             if (fileName.endsWith(".html")) fileName = fileName.removeSuffix(".html") + ".md"
                                             fileName = fileName.replace(prefixRegex, "")
                                             if (!fileName.startsWith("/")) fileName = "/$fileName"
+                                            // Pokud url obsahuje "files", přidej předponu
+                                            if (url.startsWith("files") || url.contains("/files/")) {
+                                                url = "https://tobiso.com/" + url.removePrefix("/")
+                                            }
                                             ClickableText(
                                                 text = AnnotatedString(linkText),
                                                 style = MaterialTheme.typography.bodyMedium.copy(
@@ -160,8 +164,8 @@ fun PostDetailScreen(
                                                                 navController.navigate("postDetail/${post.id}")
                                                                 showError = false
                                                             } else {
-                                                                if (url.contains("http")) {
-                                                                    // Otevřít v prohlížeči
+                                                                // Otevřít v prohlížeči, pokud url obsahuje http nebo začíná na https://tobiso.com/files
+                                                                if (url.contains("http") || url.startsWith("https://tobiso.com/files")) {
                                                                     val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(url))
                                                                     intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
                                                                     try {

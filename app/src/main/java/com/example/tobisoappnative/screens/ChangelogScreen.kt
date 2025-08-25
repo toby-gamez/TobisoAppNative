@@ -28,6 +28,7 @@ import androidx.compose.ui.text.withStyle
 fun ChangelogScreen(navController: NavController) {
     val version1_5 = listOf(
         "text se již dá vybírat a kopírovat (včetně intra a článků)",
+        "přidána podpora pro otevírání souborů",
     )
     val version1_4 = listOf(
         "opraveny tabulky",
