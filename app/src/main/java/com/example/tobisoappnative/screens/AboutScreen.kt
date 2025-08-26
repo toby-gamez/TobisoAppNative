@@ -62,7 +62,7 @@ fun AboutScreen(navController: NavController) {
         "androidx.compose.ui:ui-test-manifest",
     )
     val isDark = isSystemInDarkTheme()
-    val logoRes = if (isDark) com.example.tobisoappnative.R.drawable.logo_dark else R.drawable.logo_light
+    val logoRes = if (isDark) R.drawable.logo_dark else R.drawable.logo_light
 
     // ✅ Odstraněn Scaffold - padding se aplikuje z MainActivity
     Column(
@@ -90,7 +90,7 @@ fun AboutScreen(navController: NavController) {
                 modifier = Modifier.size(120.dp)
             )
             Text("Autor: Taneq (Tobias)", style = MaterialTheme.typography.bodyMedium)
-            Text("v1.4", style = MaterialTheme.typography.bodyMedium)
+            Text("v1.5", style = MaterialTheme.typography.bodyMedium)
             Spacer(modifier = Modifier.height(24.dp))
             Divider(
                 color = Color.Gray,
