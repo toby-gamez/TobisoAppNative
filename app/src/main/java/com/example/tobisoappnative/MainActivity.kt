@@ -115,8 +115,9 @@ fun MyApp() {
                                 !(route.startsWith("postDetail") ||
                                         route.startsWith("about") ||
                                         route.startsWith("feedback") ||
-                                        route.startsWith("changelog")),
-                        enter = slideInVertically(initialOffsetY = { it }), // slide-up
+                                        route.startsWith("changelog") ||
+                                        route.startsWith("videoPlayer")),
+                                enter = slideInVertically(initialOffsetY = { it }), // slide-up
                         exit = slideOutVertically(targetOffsetY = { it })   // slide-down
                     ) {
                         BottomBar(navController, searchRequestFocus)
@@ -219,6 +220,24 @@ fun MyApp() {
                         } else {
                             Text("Chybný postId", color = MaterialTheme.colorScheme.error)
                         }
+                    }
+                    composable(
+                        "videoPlayer/{videoUrl}",
+                        enterTransition = {
+                            slideInHorizontally(initialOffsetX = { it }, animationSpec = tween(400))
+                        },
+                        exitTransition = {
+                            slideOutHorizontally(targetOffsetX = { -it }, animationSpec = tween(400))
+                        },
+                        popEnterTransition = {
+                            slideInHorizontally(initialOffsetX = { -it }, animationSpec = tween(400))
+                        },
+                        popExitTransition = {
+                            slideOutHorizontally(targetOffsetX = { it }, animationSpec = tween(400))
+                        }
+                    ) { backStackEntry ->
+                        val videoUrl = backStackEntry.arguments?.getString("videoUrl") ?: ""
+                        com.example.tobisoappnative.screens.VideoPlayerScreen(videoUrl = videoUrl, navController = navController)
                     }
                 }
             }

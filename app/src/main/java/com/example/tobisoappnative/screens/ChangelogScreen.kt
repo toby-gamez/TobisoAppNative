@@ -29,6 +29,7 @@ fun ChangelogScreen(navController: NavController) {
     val version1_5 = listOf(
         "text se již dá vybírat a kopírovat (včetně intra a článků)",
         "přidána podpora pro otevírání souborů",
+        "přidána podpora pro pouštění videí v přehrávači"
     )
     val version1_4 = listOf(
         "opraveny tabulky",

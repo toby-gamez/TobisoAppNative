@@ -1,5 +1,6 @@
 package com.example.tobisoappnative.screens
 
+import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
@@ -22,6 +23,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.collectAsState
 import androidx.compose.foundation.text.ClickableText
 import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.ui.text.AnnotatedString
 import com.example.tobisoappnative.model.ApiClient
 import kotlinx.coroutines.launch
@@ -94,11 +96,17 @@ fun PostDetailScreen(
                         val linkRegex = Regex("(?<!!)\\[(.+?)\\]\\((.+?)\\)")
                         val linkMatches = linkRegex.findAll(processedContent).toList()
 
+                        // Detekce video tagu včetně obsahu a closing tagu
+                        val videoRegex = Regex("<video[^>]*src=\"([^\"]+)\"[^>]*>(.*?)</video>", RegexOption.DOT_MATCHES_ALL)
+                        val videoMatches = videoRegex.findAll(processedContent).toList()
+
                         // Kombinujeme všechny matches a seřadíme podle pozice
                         val allMatches = (blockMatches.map {
                             Triple(it.range.first, it.range.last + 1, "block" to it)
                         } + linkMatches.map {
                             Triple(it.range.first, it.range.last + 1, "link" to it)
+                        } + videoMatches.map {
+                            Triple(it.range.first, it.range.last + 1, "video" to it)
                         }).sortedBy { it.first }
 
                         if (allMatches.isEmpty()) {
@@ -188,6 +196,27 @@ fun PostDetailScreen(
                                                 }
                                             )
                                         }
+                                        "video" -> {
+                                            val match = typeAndMatch.second as MatchResult
+                                            val videoSrc = match.groupValues[1]
+                                            val videoUrl = if (videoSrc.startsWith("http")) videoSrc else "https://tobiso.com/$videoSrc"
+                                            OutlinedButton(
+                                                onClick = {
+                                                    navController.navigate("videoPlayer/${Uri.encode(videoUrl)}")
+                                                },
+                                                modifier = Modifier.padding(vertical = 8.dp)
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Default.PlayArrow,
+                                                    contentDescription = "Přehrát video",
+                                                    tint = MaterialTheme.colorScheme.primary
+                                                )
+                                                Spacer(modifier = Modifier.width(8.dp))
+                                                Text("Video", color = MaterialTheme.colorScheme.primary)
+                                            }
+                                            // Nastavíme lastIndex na konec celého video bloku včetně closing tagu
+                                            lastIndex = end
+                                        }
                                     }
                                     lastIndex = end
                                 }
@@ -195,6 +224,7 @@ fun PostDetailScreen(
                                 // Zbytek textu za posledním elementem
                                 if (lastIndex < processedContent.length) {
                                     val after = processedContent.substring(lastIndex)
+                                    // Zobrazíme pouze text za closing tagem, closing tag ani text uvnitř videa se nezobrazí
                                     SelectionContainer {
                                         RichText { Markdown(after) }
                                     }

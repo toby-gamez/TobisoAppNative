@@ -51,6 +51,8 @@ fun AboutScreen(navController: NavController) {
         "com.google.accompanist:accompanist-navigation-animation:0.32.0",
         "com.google.android.gms:play-services-oss-licenses:17.0.1",
         "androidx.compose.ui:ui-text-google-fonts:1.8.1",
+        "androidx.media3:media3-exoplayer:1.8.0",
+        "androidx.media3:media3-ui:1.8.0",
 
         "junit:junit:4.13.2",
         "androidx.test.ext:junit:1.1.5",
