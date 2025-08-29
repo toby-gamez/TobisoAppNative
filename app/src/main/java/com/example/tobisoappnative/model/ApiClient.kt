@@ -15,7 +15,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 import javax.net.ssl.*
 
 object ApiClient {
-    private const val BASE_URL = "https://10.0.2.2:7270/api/"
+    private const val BASE_URL = "https://www.tobiso.com/api/"
 
     // Přihlašovací údaje natvrdo
     private const val USERNAME = "admin"
