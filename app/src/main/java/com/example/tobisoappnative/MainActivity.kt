@@ -41,6 +41,7 @@ import com.example.tobisoappnative.screens.CategoryListScreen
 import com.example.tobisoappnative.screens.FeedbackScreen
 import com.example.tobisoappnative.screens.AboutScreen
 import com.example.tobisoappnative.screens.ChangelogScreen
+import com.example.tobisoappnative.screens.FavoritesScreen
 import com.example.tobisoappnative.screens.NoInternetScreen
 import com.example.tobisoappnative.viewmodel.MainViewModel
 import kotlinx.coroutines.delay
@@ -194,6 +195,23 @@ fun MyApp() {
                         }
                     ) {
                         AboutScreen(navController = navController)
+                    }
+                    composable(
+                        "favorites",
+                        enterTransition = {
+                            slideInHorizontally(initialOffsetX = { it }, animationSpec = tween(400))
+                        },
+                        exitTransition = {
+                            slideOutHorizontally(targetOffsetX = { -it }, animationSpec = tween(400))
+                        },
+                        popEnterTransition = {
+                            slideInHorizontally(initialOffsetX = { -it }, animationSpec = tween(400))
+                        },
+                        popExitTransition = {
+                            slideOutHorizontally(targetOffsetX = { it }, animationSpec = tween(400))
+                        }
+                    ) {
+                        FavoritesScreen(navController = navController)
                     }
                     composable("categoryList/{categoryName}") { backStackEntry ->
                         val categoryName = backStackEntry.arguments?.getString("categoryName") ?: ""

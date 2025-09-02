@@ -1,16 +1,25 @@
 package com.example.tobisoappnative.viewmodel
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import android.content.Context
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.tobisoappnative.model.ApiClient
 import com.example.tobisoappnative.model.Category
 import com.example.tobisoappnative.model.Post
+import com.google.gson.Gson
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.stringSetPreferencesKey
+import androidx.datastore.preferences.preferencesDataStore
+import kotlinx.coroutines.flow.map
 
-class MainViewModel : ViewModel() {
+private val Context.dataStore by preferencesDataStore(name = "saved_posts")
+
+class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _categories = MutableStateFlow<List<Category>>(emptyList())
     val categories: StateFlow<List<Category>> = _categories
 
@@ -27,6 +36,67 @@ class MainViewModel : ViewModel() {
     val postDetail: StateFlow<Post?> = _postDetail
     private val _postDetailError = MutableStateFlow<String?>(null)
     val postDetailError: StateFlow<String?> = _postDetailError
+
+    private val dataStore = application.dataStore
+    private val FAVORITE_POSTS_KEY = stringSetPreferencesKey("favorite_posts_json")
+    private val gson = Gson()
+
+    private val _favoritePosts = MutableStateFlow<List<Post>>(emptyList())
+    val favoritePosts: StateFlow<List<Post>> = _favoritePosts
+
+    init {
+        viewModelScope.launch(Dispatchers.IO) {
+            dataStore.data
+                .map { prefs ->
+                    val jsonSet = prefs[FAVORITE_POSTS_KEY] ?: emptySet()
+                    jsonSet.mapNotNull { json ->
+                        try {
+                            gson.fromJson(json, Post::class.java)
+                        } catch (e: Exception) {
+                            null
+                        }
+                    }
+                }
+                .collect { posts ->
+                    _favoritePosts.value = posts
+                }
+        }
+    }
+
+    fun savePost(post: Post) {
+        viewModelScope.launch(Dispatchers.IO) {
+            dataStore.edit { prefs ->
+                val current = prefs[FAVORITE_POSTS_KEY] ?: emptySet()
+                // Pokud už je post uložen, nepřidávej znovu
+                val alreadySaved = current.any { json ->
+                    try {
+                        gson.fromJson(json, Post::class.java).id == post.id
+                    } catch (e: Exception) {
+                        false
+                    }
+                }
+                if (!alreadySaved) {
+                    prefs[FAVORITE_POSTS_KEY] = current + gson.toJson(post)
+                }
+            }
+        }
+    }
+
+    fun unsavePost(postId: Int) {
+        viewModelScope.launch(Dispatchers.IO) {
+            dataStore.edit { prefs ->
+                val current = prefs[FAVORITE_POSTS_KEY] ?: emptySet()
+                val newSet = current.filterNot { json ->
+                    try {
+                        gson.fromJson(json, Post::class.java).id == postId
+                    } catch (e: Exception) {
+                        false
+                    }
+                }.toSet()
+                prefs[FAVORITE_POSTS_KEY] = newSet
+            }
+        }
+    }
 
     fun loadCategories() {
         viewModelScope.launch(Dispatchers.IO) {
@@ -47,7 +117,7 @@ class MainViewModel : ViewModel() {
                 val posts = ApiClient.apiService.getPosts(categoryId)
                 _posts.value = posts
                 _postError.value = null
-            } catch (e: Throwable) { // zachytí i fatální chyby
+            } catch (e: Throwable) {
                 _posts.value = emptyList()
                 _postError.value = e.message ?: e.toString()
             }

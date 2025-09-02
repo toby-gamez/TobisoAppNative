@@ -108,10 +108,36 @@ fun MoreScreen(navController: NavController, viewModel: MainViewModel = viewMode
                     ) {
                         Column {
                             Text("Deník změn", style = MaterialTheme.typography.titleMedium)
-                            Text("Všechno důležité, co bylo změněno", style = MaterialTheme.typography.bodySmall)
+                            Text(
+                                "Všechno důležité, co bylo změněno",
+                                style = MaterialTheme.typography.bodySmall
+                            )
                         }
                     }
                 }
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(8.dp)
+                        .clickable { navController.navigate("favorites") },
+                    elevation = CardDefaults.cardElevation(4.dp)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text("Oblíbené", style = MaterialTheme.typography.titleMedium)
+                            Text(
+                                "Tvé uložené příspěvky",
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                    }
+                }
+
             }
 
             if (!filteredPosts.isEmpty()) {

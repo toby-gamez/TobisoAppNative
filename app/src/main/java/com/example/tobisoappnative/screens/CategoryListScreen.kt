@@ -14,7 +14,9 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.Folder
+import androidx.compose.material.icons.outlined.Star
 import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -30,6 +32,7 @@ fun CategoryListScreen(
     val categoryError by viewModel.categoryError.collectAsState()
     val posts by viewModel.posts.collectAsState()
     val postError by viewModel.postError.collectAsState()
+    val favoritePosts by viewModel.favoritePosts.collectAsState()
     LaunchedEffect(Unit) { viewModel.loadCategories() }
 
     var parentCategoryNameState by remember { mutableStateOf(parentCategoryName) }
@@ -137,10 +140,13 @@ fun CategoryListScreen(
                                 .clickable { navController.navigate("postDetail/${post.id}") },
                             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
                         ) {
-                            Row(modifier = Modifier.padding(16.dp), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                            Row(
+                                modifier = Modifier.padding(16.dp),
+                                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                            ) {
                                 Icon(Icons.Default.Description, contentDescription = "Post", modifier = Modifier.size(32.dp))
                                 Spacer(modifier = Modifier.width(16.dp))
-                                Column {
+                                Column(modifier = Modifier.weight(1f)) {
                                     Text(text = post.title, style = MaterialTheme.typography.titleMedium)
                                     val updated = post.updatedAt
                                     val formatted = updated?.let {
@@ -154,6 +160,17 @@ fun CategoryListScreen(
                                     if (formatted.isNotBlank()) {
                                         Text(text = "Upraveno: $formatted", style = MaterialTheme.typography.bodySmall)
                                     }
+                                }
+                                val isFavorite = favoritePosts.any { it.id == post.id }
+                                IconButton(onClick = {
+                                    if (isFavorite) viewModel.unsavePost(post.id) else viewModel.savePost(post)
+                                }) {
+                                    Icon(
+                                        imageVector = if (isFavorite) Icons.Default.Star else Icons.Outlined.Star,
+                                        contentDescription = if (isFavorite) "Odebrat z oblíbených" else "Uložit do oblíbených",
+                                        tint = if (isFavorite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.size(28.dp)
+                                    )
                                 }
                             }
                         }
