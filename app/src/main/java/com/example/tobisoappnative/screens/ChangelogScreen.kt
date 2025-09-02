@@ -26,6 +26,9 @@ import androidx.compose.ui.text.withStyle
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChangelogScreen(navController: NavController) {
+    val version1_6 = listOf(
+        "přidán počet slov a délka čtení pro článek",
+    )
     val version1_5 = listOf(
         "text se již dá vybírat a kopírovat (včetně intra a článků)",
         "přidána podpora pro otevírání souborů",

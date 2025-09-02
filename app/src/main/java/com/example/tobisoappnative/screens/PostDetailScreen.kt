@@ -29,6 +29,8 @@ import com.example.tobisoappnative.model.ApiClient
 import kotlinx.coroutines.launch
 import androidx.compose.ui.text.style.TextAlign
 
+val prefixRegex = Regex("^(ml-|sl-|li-|hv-|m-|ch-|f-|pr-|z-)")
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PostDetailScreen(
@@ -59,6 +61,22 @@ fun PostDetailScreen(
                 }
             }
         )
+
+        // Zobrazení počtu slov a času čtení pod nadpisem
+        if (postDetail?.content != null) {
+            val words = postDetail!!.content.trim().split("\\s+".toRegex()).size
+            val minutes = Math.ceil(words / 200.0).toInt().coerceAtLeast(1)
+            val infoText = "$words slov | ~${minutes} min čtení"
+            Text(
+                text = infoText,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f),
+                style = MaterialTheme.typography.bodySmall,
+                textAlign = TextAlign.End
+            )
+        }
 
         when {
             postDetailError != null -> {
@@ -275,5 +293,3 @@ fun PostDetailScreen(
         }
     }
 }
-
-val prefixRegex = Regex("^(ml-|sl-|li-|hv-|m-|ch-|f-|pr-|z-)")
