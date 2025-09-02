@@ -28,6 +28,8 @@ import androidx.compose.ui.text.AnnotatedString
 import com.example.tobisoappnative.model.ApiClient
 import kotlinx.coroutines.launch
 import androidx.compose.ui.text.style.TextAlign
+import com.google.accompanist.swiperefresh.SwipeRefresh
+import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
 
 val prefixRegex = Regex("^(ml-|sl-|li-|hv-|m-|ch-|f-|pr-|z-)")
 
@@ -40,254 +42,331 @@ fun PostDetailScreen(
 ) {
     val postDetail by viewModel.postDetail.collectAsState()
     val postDetailError by viewModel.postDetailError.collectAsState()
-    var loaded by remember { mutableStateOf(false) }
+    var isRefreshing by remember { mutableStateOf(false) }
+    val swipeRefreshState = rememberSwipeRefreshState(isRefreshing)
     val coroutineScope = rememberCoroutineScope()
     var showError by remember { mutableStateOf(false) }
     var errorText by remember { mutableStateOf("") }
+    var loaded by remember { mutableStateOf(false) }
     LaunchedEffect(postId) {
         viewModel.loadPostDetail(postId)
         loaded = true
     }
 
-    // ✅ Odstraněn Scaffold - padding se aplikuje z MainActivity
-    Column(
-        modifier = Modifier.fillMaxSize()
-    ) {
-        LargeTopAppBar(
-            title = { Text(postDetail?.title ?: "Detail příspěvku") },
-            navigationIcon = {
-                IconButton(onClick = { navController.popBackStack() }) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Zpět")
+    Box(modifier = Modifier.fillMaxSize()) {
+        SwipeRefresh(
+            state = swipeRefreshState,
+            onRefresh = {
+                isRefreshing = true
+                coroutineScope.launch {
+                    viewModel.loadPostDetail(postId)
+                    isRefreshing = false
                 }
             }
-        )
-
-        // Zobrazení počtu slov a času čtení pod nadpisem
-        if (postDetail?.content != null) {
-            val words = postDetail!!.content.trim().split("\\s+".toRegex()).size
-            val minutes = Math.ceil(words / 200.0).toInt().coerceAtLeast(1)
-            val infoText = "$words slov | ~${minutes} min čtení"
-            Text(
-                text = infoText,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f),
-                style = MaterialTheme.typography.bodySmall,
-                textAlign = TextAlign.End
-            )
-        }
-
-        when {
-            postDetailError != null -> {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = androidx.compose.ui.Alignment.Center) {
-                    Text("Chyba při načítání příspěvku: ${postDetailError}", color = MaterialTheme.colorScheme.error)
-                }
-            }
-            !loaded || postDetail == null -> {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = androidx.compose.ui.Alignment.Center) {
-                    CircularProgressIndicator()
-                }
-            }
-            else -> {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(16.dp)
-                        .verticalScroll(rememberScrollState())
-                ) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    postDetail?.content?.let { content ->
-                        // Nejprve nahradíme obrázky
-                        val imageRegex = Regex("!\\[(.*?)]\\((images/[^)]+)\\)")
-                        var processedContent = content.replace(imageRegex) {
-                            val alt = it.groupValues[1]
-                            val path = it.groupValues[2]
-                            "![${alt}](https://tobiso.com/${path})"
+        ) {
+            Column(
+                modifier = Modifier.fillMaxSize()
+            ) {
+                LargeTopAppBar(
+                    title = { Text(postDetail?.title ?: "Detail příspěvku") },
+                    navigationIcon = {
+                        IconButton(onClick = { navController.popBackStack() }) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Zpět")
                         }
+                    }
+                )
 
-                        // Najdeme zvýrazněné bloky ...text...
-                        val blockRegex = Regex("\\.\\.\\.\\s*([\\s\\S]*?)\\s*\\.\\.\\.")
-                        val blockMatches = blockRegex.findAll(processedContent).toList()
+                // Zobrazení počtu slov a času čtení pod nadpisem
+                if (postDetail?.content != null) {
+                    val words = postDetail!!.content.trim().split("\\s+".toRegex()).size
+                    val minutes = Math.ceil(words / 200.0).toInt().coerceAtLeast(1)
+                    val infoText = "$words slov | ~${minutes} min čtení"
+                    Text(
+                        text = infoText,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp),
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f),
+                        style = MaterialTheme.typography.bodySmall,
+                        textAlign = TextAlign.End
+                    )
+                }
 
-                        // Najdeme odkazy [text](url) ale ne obrázky ![alt](url)
-                        val linkRegex = Regex("(?<!!)\\[(.+?)\\]\\((.+?)\\)")
-                        val linkMatches = linkRegex.findAll(processedContent).toList()
+                when {
+                    postDetailError != null -> {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = androidx.compose.ui.Alignment.Center
+                        ) {
+                            Text(
+                                "Chyba při načítání příspěvku: ${postDetailError}",
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        }
+                    }
 
-                        // Detekce video tagu včetně obsahu a closing tagu
-                        val videoRegex = Regex("<video[^>]*src=\"([^\"]+)\"[^>]*>(.*?)</video>", RegexOption.DOT_MATCHES_ALL)
-                        val videoMatches = videoRegex.findAll(processedContent).toList()
+                    !loaded || postDetail == null -> {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = androidx.compose.ui.Alignment.Center
+                        ) {
+                            CircularProgressIndicator()
+                        }
+                    }
 
-                        // Kombinujeme všechny matches a seřadíme podle pozice
-                        val allMatches = (blockMatches.map {
-                            Triple(it.range.first, it.range.last + 1, "block" to it)
-                        } + linkMatches.map {
-                            Triple(it.range.first, it.range.last + 1, "link" to it)
-                        } + videoMatches.map {
-                            Triple(it.range.first, it.range.last + 1, "video" to it)
-                        }).sortedBy { it.first }
+                    else -> {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(16.dp)
+                                .verticalScroll(rememberScrollState())
+                        ) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            postDetail?.content?.let { content ->
+                                // Nejprve nahradíme obrázky
+                                val imageRegex = Regex("!\\[(.*?)]\\((images/[^)]+)\\)")
+                                var processedContent = content.replace(imageRegex) {
+                                    val alt = it.groupValues[1]
+                                    val path = it.groupValues[2]
+                                    "![${alt}](https://tobiso.com/${path})"
+                                }
 
-                        if (allMatches.isEmpty()) {
-                            SelectionContainer {
-                                RichText { Markdown(processedContent) }
-                            }
-                        } else {
-                            var lastIndex = 0
-                            Column {
-                                for ((start, end, typeAndMatch) in allMatches) {
-                                    // Text před aktuálním elementem
-                                    if (start > lastIndex) {
-                                        val before = processedContent.substring(lastIndex, start)
-                                        SelectionContainer {
-                                            RichText { Markdown(before) }
-                                        }
+                                // Najdeme zvýrazněné bloky ...text...
+                                val blockRegex = Regex("\\.\\.\\.\\s*([\\s\\S]*?)\\s*\\.\\.\\.")
+                                val blockMatches = blockRegex.findAll(processedContent).toList()
+
+                                // Najdeme odkazy [text](url) ale ne obrázky ![alt](url)
+                                val linkRegex = Regex("(?<!!)\\[(.+?)\\]\\((.+?)\\)")
+                                val linkMatches = linkRegex.findAll(processedContent).toList()
+
+                                // Detekce video tagu včetně obsahu a closing tagu
+                                val videoRegex = Regex(
+                                    "<video[^>]*src=\"([^\"]+)\"[^>]*>(.*?)</video>",
+                                    RegexOption.DOT_MATCHES_ALL
+                                )
+                                val videoMatches = videoRegex.findAll(processedContent).toList()
+
+                                // Kombinujeme všechny matches a seřadíme podle pozice
+                                val allMatches = (blockMatches.map {
+                                    Triple(it.range.first, it.range.last + 1, "block" to it)
+                                } + linkMatches.map {
+                                    Triple(it.range.first, it.range.last + 1, "link" to it)
+                                } + videoMatches.map {
+                                    Triple(it.range.first, it.range.last + 1, "video" to it)
+                                }).sortedBy { it.first }
+
+                                if (allMatches.isEmpty()) {
+                                    SelectionContainer {
+                                        RichText { Markdown(processedContent) }
                                     }
-
-                                    when (typeAndMatch.first) {
-                                        "block" -> {
-                                            // Zvýrazněný blok
-                                            val match = typeAndMatch.second as MatchResult
-                                            val blockText = match.groupValues[1]
-                                            Box(
-                                                modifier = Modifier
-                                                    .fillMaxWidth()
-                                                    .padding(vertical = 4.dp)
-                                                    .background(
-                                                        MaterialTheme.colorScheme.surfaceVariant,
-                                                        shape = MaterialTheme.shapes.medium
-                                                    )
-                                                    .padding(8.dp)
-                                            ) {
+                                } else {
+                                    var lastIndex = 0
+                                    Column {
+                                        for ((start, end, typeAndMatch) in allMatches) {
+                                            // Text před aktuálním elementem
+                                            if (start > lastIndex) {
+                                                val before =
+                                                    processedContent.substring(lastIndex, start)
                                                 SelectionContainer {
-                                                    RichText { Markdown(blockText) }
+                                                    RichText { Markdown(before) }
                                                 }
                                             }
-                                        }
-                                        "link" -> {
-                                            // Klikatelný odkaz
-                                            val match = typeAndMatch.second as MatchResult
-                                            val linkText = match.groupValues[1]
-                                            var url = match.groupValues[2]
-                                            var fileName = url
-                                            if (fileName.endsWith(".html")) fileName = fileName.removeSuffix(".html") + ".md"
-                                            fileName = fileName.replace(prefixRegex, "")
-                                            if (!fileName.startsWith("/")) fileName = "/$fileName"
-                                            // Pokud url obsahuje "files", přidej předponu
-                                            if (url.startsWith("files") || url.contains("/files/")) {
-                                                url = "https://tobiso.com/" + url.removePrefix("/")
-                                            }
-                                            ClickableText(
-                                                text = AnnotatedString(linkText),
-                                                style = MaterialTheme.typography.bodyMedium.copy(
-                                                    color = MaterialTheme.colorScheme.primary
-                                                ),
-                                                onClick = {
-                                                    coroutineScope.launch {
-                                                        try {
-                                                            val postsApi = ApiClient.apiService.getPosts()
-                                                            val post = postsApi.find { it.filePath == fileName }
-                                                            if (post != null) {
-                                                                navController.navigate("postDetail/${post.id}")
-                                                                showError = false
-                                                            } else {
-                                                                // Otevřít v prohlížeči, pokud url obsahuje http nebo začíná na https://tobiso.com/files
-                                                                if (url.contains("http") || url.startsWith("https://tobiso.com/files")) {
-                                                                    val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(url))
-                                                                    intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
-                                                                    try {
-                                                                        navController.context.startActivity(intent)
-                                                                        showError = false
-                                                                    } catch (e: Exception) {
-                                                                        errorText = "Nelze otevřít odkaz: ${e.message}"
-                                                                        showError = true
-                                                                    }
-                                                                } else {
-                                                                    errorText = "Soubor '$fileName' nebyl nalezen."
-                                                                    showError = true
-                                                                }
-                                                            }
-                                                        } catch (e: Exception) {
-                                                            errorText = "Chyba při načítání postů: ${e.message}"
-                                                            showError = true
+
+                                            when (typeAndMatch.first) {
+                                                "block" -> {
+                                                    // Zvýrazněný blok
+                                                    val match = typeAndMatch.second as MatchResult
+                                                    val blockText = match.groupValues[1]
+                                                    Box(
+                                                        modifier = Modifier
+                                                            .fillMaxWidth()
+                                                            .padding(vertical = 4.dp)
+                                                            .background(
+                                                                MaterialTheme.colorScheme.surfaceVariant,
+                                                                shape = MaterialTheme.shapes.medium
+                                                            )
+                                                            .padding(8.dp)
+                                                    ) {
+                                                        SelectionContainer {
+                                                            RichText { Markdown(blockText) }
                                                         }
                                                     }
                                                 }
-                                            )
-                                        }
-                                        "video" -> {
-                                            val match = typeAndMatch.second as MatchResult
-                                            val videoSrc = match.groupValues[1]
-                                            val videoUrl = if (videoSrc.startsWith("http")) videoSrc else "https://tobiso.com/$videoSrc"
-                                            OutlinedButton(
-                                                onClick = {
-                                                    navController.navigate("videoPlayer/${Uri.encode(videoUrl)}")
-                                                },
-                                                modifier = Modifier.padding(vertical = 8.dp)
-                                            ) {
-                                                Icon(
-                                                    imageVector = Icons.Default.PlayArrow,
-                                                    contentDescription = "Přehrát video",
-                                                    tint = MaterialTheme.colorScheme.primary
-                                                )
-                                                Spacer(modifier = Modifier.width(8.dp))
-                                                Text("Video", color = MaterialTheme.colorScheme.primary)
+
+                                                "link" -> {
+                                                    // Klikatelný odkaz
+                                                    val match = typeAndMatch.second as MatchResult
+                                                    val linkText = match.groupValues[1]
+                                                    var url = match.groupValues[2]
+                                                    var fileName = url
+                                                    if (fileName.endsWith(".html")) fileName =
+                                                        fileName.removeSuffix(".html") + ".md"
+                                                    fileName = fileName.replace(prefixRegex, "")
+                                                    if (!fileName.startsWith("/")) fileName =
+                                                        "/$fileName"
+                                                    // Pokud url obsahuje "files", přidej předponu
+                                                    if (url.startsWith("files") || url.contains("/files/")) {
+                                                        url =
+                                                            "https://tobiso.com/" + url.removePrefix(
+                                                                "/"
+                                                            )
+                                                    }
+                                                    ClickableText(
+                                                        text = AnnotatedString(linkText),
+                                                        style = MaterialTheme.typography.bodyMedium.copy(
+                                                            color = MaterialTheme.colorScheme.primary
+                                                        ),
+                                                        onClick = {
+                                                            coroutineScope.launch {
+                                                                try {
+                                                                    val postsApi =
+                                                                        ApiClient.apiService.getPosts()
+                                                                    val post =
+                                                                        postsApi.find { it.filePath == fileName }
+                                                                    if (post != null) {
+                                                                        navController.navigate("postDetail/${post.id}")
+                                                                        showError = false
+                                                                    } else {
+                                                                        // Otevřít v prohlížeči, pokud url obsahuje http nebo začíná na https://tobiso.com/files
+                                                                        if (url.contains("http") || url.startsWith(
+                                                                                "https://tobiso.com/files"
+                                                                            )
+                                                                        ) {
+                                                                            val intent =
+                                                                                android.content.Intent(
+                                                                                    android.content.Intent.ACTION_VIEW,
+                                                                                    android.net.Uri.parse(
+                                                                                        url
+                                                                                    )
+                                                                                )
+                                                                            intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                                                                            try {
+                                                                                navController.context.startActivity(
+                                                                                    intent
+                                                                                )
+                                                                                showError = false
+                                                                            } catch (e: Exception) {
+                                                                                errorText =
+                                                                                    "Nelze otevřít odkaz: ${e.message}"
+                                                                                showError = true
+                                                                            }
+                                                                        } else {
+                                                                            errorText =
+                                                                                "Soubor '$fileName' nebyl nalezen."
+                                                                            showError = true
+                                                                        }
+                                                                    }
+                                                                } catch (e: Exception) {
+                                                                    errorText =
+                                                                        "Chyba při načítání postů: ${e.message}"
+                                                                    showError = true
+                                                                }
+                                                            }
+                                                        }
+                                                    )
+                                                }
+
+                                                "video" -> {
+                                                    val match = typeAndMatch.second as MatchResult
+                                                    val videoSrc = match.groupValues[1]
+                                                    val videoUrl =
+                                                        if (videoSrc.startsWith("http")) videoSrc else "https://tobiso.com/$videoSrc"
+                                                    OutlinedButton(
+                                                        onClick = {
+                                                            navController.navigate(
+                                                                "videoPlayer/${
+                                                                    Uri.encode(
+                                                                        videoUrl
+                                                                    )
+                                                                }"
+                                                            )
+                                                        },
+                                                        modifier = Modifier.padding(vertical = 8.dp)
+                                                    ) {
+                                                        Icon(
+                                                            imageVector = Icons.Default.PlayArrow,
+                                                            contentDescription = "Přehrát video",
+                                                            tint = MaterialTheme.colorScheme.primary
+                                                        )
+                                                        Spacer(modifier = Modifier.width(8.dp))
+                                                        Text(
+                                                            "Video",
+                                                            color = MaterialTheme.colorScheme.primary
+                                                        )
+                                                    }
+                                                    // Nastavíme lastIndex na konec celého video bloku včetně closing tagu
+                                                    lastIndex = end
+                                                }
                                             }
-                                            // Nastavíme lastIndex na konec celého video bloku včetně closing tagu
                                             lastIndex = end
                                         }
-                                    }
-                                    lastIndex = end
-                                }
 
-                                // Zbytek textu za posledním elementem
-                                if (lastIndex < processedContent.length) {
-                                    val after = processedContent.substring(lastIndex)
-                                    // Zobrazíme pouze text za closing tagem, closing tag ani text uvnitř videa se nezobrazí
-                                    SelectionContainer {
-                                        RichText { Markdown(after) }
+                                        // Zbytek textu za posledním elementem
+                                        if (lastIndex < processedContent.length) {
+                                            val after = processedContent.substring(lastIndex)
+                                            // Zobrazíme pouze text za closing tagem, closing tag ani text uvnitř videa se nezobrazí
+                                            SelectionContainer {
+                                                RichText { Markdown(after) }
+                                            }
+                                        }
                                     }
                                 }
                             }
+                            Spacer(modifier = Modifier.height(16.dp))
+                            val locale = java.util.Locale("cs", "CZ")
+                            val formatter = SimpleDateFormat("dd. MM. yyyy 'v' HH:mm", locale)
+                            val createdFormatted = postDetail?.createdAt?.let {
+                                try {
+                                    formatter.format(it)
+                                } catch (e: Exception) {
+                                    ""
+                                }
+                            } ?: ""
+                            val updatedFormatted = postDetail?.updatedAt?.let {
+                                try {
+                                    formatter.format(it)
+                                } catch (e: Exception) {
+                                    ""
+                                }
+                            } ?: ""
+                            Text(
+                                text = "Vytvořeno: $createdFormatted",
+                                style = MaterialTheme.typography.bodySmall,
+                                textAlign = TextAlign.Start
+                            )
+                            if (updatedFormatted.isNotBlank()) {
+                                Text(
+                                    text = "Upraveno: $updatedFormatted",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    textAlign = TextAlign.Start
+                                )
+                            }
+                            postDetail?.filePath.takeIf { !it.isNullOrBlank() }?.let {
+                                Spacer(modifier = Modifier.height(16.dp))
+                            }
                         }
-                    }
-                    Spacer(modifier = Modifier.height(16.dp))
-                    val locale = java.util.Locale("cs", "CZ")
-                    val formatter = SimpleDateFormat("dd. MM. yyyy 'v' HH:mm", locale)
-                    val createdFormatted = postDetail?.createdAt?.let {
-                        try {
-                            formatter.format(it)
-                        } catch (e: Exception) {
-                            ""
-                        }
-                    } ?: ""
-                    val updatedFormatted = postDetail?.updatedAt?.let {
-                        try {
-                            formatter.format(it)
-                        } catch (e: Exception) {
-                            ""
-                        }
-                    } ?: ""
-                    Text(text = "Vytvořeno: $createdFormatted", style = MaterialTheme.typography.bodySmall, textAlign = TextAlign.Start)
-                    if (updatedFormatted.isNotBlank()) {
-                        Text(text = "Upraveno: $updatedFormatted", style = MaterialTheme.typography.bodySmall, textAlign = TextAlign.Start)
-                    }
-                    postDetail?.filePath.takeIf { !it.isNullOrBlank() }?.let {
-                        Spacer(modifier = Modifier.height(16.dp))
                     }
                 }
             }
-        }
-
-        // Přesun Snackbar mimo Column, aby byl vždy viditelný
-        if (showError) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = androidx.compose.ui.Alignment.BottomCenter) {
-                Snackbar(
-                    action = {
-                        TextButton(onClick = { showError = false }) { Text("Zavřít", textAlign = TextAlign.Start) }
-                    },
-                    modifier = Modifier.padding(8.dp)
+            // Snackbar zůstává mimo SwipeRefresh
+            if (showError) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = androidx.compose.ui.Alignment.BottomCenter
                 ) {
-                    Text(errorText, textAlign = TextAlign.Start)
+                    Snackbar(
+                        action = {
+                            TextButton(onClick = { showError = false }) {
+                                Text(
+                                    "Zavřít",
+                                    textAlign = TextAlign.Start
+                                )
+                            }
+                        },
+                        modifier = Modifier.padding(8.dp)
+                    ) {
+                        Text(errorText, textAlign = TextAlign.Start)
+                    }
                 }
             }
         }

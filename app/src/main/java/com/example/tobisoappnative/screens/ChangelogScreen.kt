@@ -103,6 +103,12 @@ fun ChangelogScreen(navController: NavController) {
                         }
                 }
             )
+            Text("Verze 1.6", style = typography.headlineSmall, modifier = Modifier.padding(bottom = 4.dp))
+            version1_6.forEach { item ->
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(start = 16.dp)) {
+                    Text("• $item", style = typography.bodyLarge)
+                }
+            }
             Text("Verze 1.5", style = typography.headlineSmall, modifier = Modifier.padding(bottom = 4.dp))
             version1_5.forEach { item ->
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(start = 16.dp)) {
