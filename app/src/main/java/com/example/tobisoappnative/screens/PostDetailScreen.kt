@@ -5,6 +5,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -46,6 +49,7 @@ fun PostDetailScreen(
 ) {
     val postDetail by viewModel.postDetail.collectAsState()
     val postDetailError by viewModel.postDetailError.collectAsState()
+    val favoritePosts by viewModel.favoritePosts.collectAsState()
     var isRefreshing by remember { mutableStateOf(false) }
     val swipeRefreshState = rememberSwipeRefreshState(isRefreshing)
     val coroutineScope = rememberCoroutineScope()
@@ -81,6 +85,7 @@ fun PostDetailScreen(
         }
     }
 
+    val context = LocalContext.current
     Box(modifier = Modifier.fillMaxSize()) {
         SwipeRefresh(
             state = swipeRefreshState,
@@ -100,6 +105,40 @@ fun PostDetailScreen(
                     navigationIcon = {
                         IconButton(onClick = { navController.popBackStack() }) {
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Zpět")
+                        }
+                    },
+                    actions = {
+                        val isFavorite = favoritePosts.any { it.id == postDetail?.id }
+                        // HVĚZDIČKA - první vpravo
+                        IconButton(onClick = {
+                            postDetail?.let {
+                                if (isFavorite) viewModel.unsavePost(it.id) else viewModel.savePost(it)
+                            }
+                        }) {
+                            Icon(
+                                imageVector = if (isFavorite) Icons.Filled.Star else Icons.Outlined.Star,
+                                contentDescription = if (isFavorite) "Odebrat z oblíbených" else "Uložit do oblíbených",
+                                tint = if (isFavorite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        // SHARE BUTTON - druhé vpravo
+                        IconButton(onClick = {
+                            postDetail?.id?.let { id ->
+                                val url = "https://www.tobiso.com/post/$id"
+                                val sendIntent = android.content.Intent().apply {
+                                    action = android.content.Intent.ACTION_SEND
+                                    putExtra(android.content.Intent.EXTRA_TEXT, url)
+                                    type = "text/plain"
+                                }
+                                val shareIntent = android.content.Intent.createChooser(sendIntent, null)
+                                context.startActivity(shareIntent)
+                            }
+                        }) {
+                            Icon(
+                                imageVector = Icons.Filled.Share,
+                                contentDescription = "Sdílet odkaz",
+                                tint = MaterialTheme.colorScheme.primary
+                            )
                         }
                     }
                 )

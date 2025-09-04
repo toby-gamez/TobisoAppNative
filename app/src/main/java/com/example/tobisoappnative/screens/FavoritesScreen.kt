@@ -8,7 +8,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
@@ -66,31 +65,11 @@ fun FavoritesScreen(
         // Tlačítko pro smazání obsahu tabulky
         Row(modifier = Modifier.fillMaxWidth().padding(8.dp), horizontalArrangement = Arrangement.End) {
             when (selectedTab) {
-                0 -> Button(
-                    onClick = { showDeleteDialog = true; deleteType = 0 },
-                    enabled = snippets.isNotEmpty(),
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.errorContainer)
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.Delete,
-                        contentDescription = "Smazat všechny útržky",
-                        tint = MaterialTheme.colorScheme.onErrorContainer
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Smazat všechny útržky", color = MaterialTheme.colorScheme.onErrorContainer)
+                0 -> Button(onClick = { showDeleteDialog = true; deleteType = 0 }, enabled = snippets.isNotEmpty()) {
+                    Text("Smazat všechny útržky")
                 }
-                1 -> Button(
-                    onClick = { showDeleteDialog = true; deleteType = 1 },
-                    enabled = favoritePosts.isNotEmpty(),
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.errorContainer)
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.Delete,
-                        contentDescription = "Smazat všechny příspěvky",
-                        tint = MaterialTheme.colorScheme.onErrorContainer
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Smazat všechny příspěvky", color = MaterialTheme.colorScheme.onErrorContainer)
+                1 -> Button(onClick = { showDeleteDialog = true; deleteType = 1 }, enabled = favoritePosts.isNotEmpty()) {
+                    Text("Smazat všechny příspěvky")
                 }
             }
         }
