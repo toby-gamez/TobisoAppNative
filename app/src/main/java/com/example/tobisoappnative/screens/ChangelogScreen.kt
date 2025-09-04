@@ -29,7 +29,8 @@ fun ChangelogScreen(navController: NavController) {
     val version1_6 = listOf(
         "přidán počet slov a délka čtení pro článek",
         "přidáno gesto pro znovunačtení článku (swipe down)",
-        "přidány oblíbené posty a útržky"
+        "přidány oblíbené posty a útržky",
+        "přidány možnosti v přispěvku pro uložení a sdílení",
     )
     val version1_5 = listOf(
         "text se již dá vybírat a kopírovat (včetně intra a článků)",

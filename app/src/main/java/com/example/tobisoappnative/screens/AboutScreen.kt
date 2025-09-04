@@ -53,6 +53,8 @@ fun AboutScreen(navController: NavController) {
         "androidx.compose.ui:ui-text-google-fonts:1.8.1",
         "androidx.media3:media3-exoplayer:1.8.0",
         "androidx.media3:media3-ui:1.8.0",
+        "com.google.accompanist:accompanist-swiperefresh:0.33.2-alpha",
+        "androidx.datastore:datastore-preferences:1.0.0",
 
         "junit:junit:4.13.2",
         "androidx.test.ext:junit:1.1.5",
