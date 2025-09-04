@@ -7,7 +7,9 @@ import androidx.lifecycle.viewModelScope
 import com.example.tobisoappnative.model.ApiClient
 import com.example.tobisoappnative.model.Category
 import com.example.tobisoappnative.model.Post
+import com.example.tobisoappnative.model.Snippet
 import com.google.gson.Gson
+import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -43,6 +45,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _favoritePosts = MutableStateFlow<List<Post>>(emptyList())
     val favoritePosts: StateFlow<List<Post>> = _favoritePosts
+
+    private val _snippets = MutableStateFlow<List<Snippet>>(emptyList())
+    val snippets: StateFlow<List<Snippet>> = _snippets
+    private val SNIPPETS_FILE_NAME = "snippets.json"
 
     init {
         viewModelScope.launch(Dispatchers.IO) {
@@ -134,6 +140,74 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 _postDetail.value = null
                 _postDetailError.value = e.message ?: e.toString()
             }
+        }
+    }
+
+    fun loadSnippets() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val file = File(getApplication<Application>().filesDir, SNIPPETS_FILE_NAME)
+            if (!file.exists()) {
+                _snippets.value = emptyList()
+                return@launch
+            }
+            try {
+                val json = file.readText()
+                val loaded = gson.fromJson(json, Array<Snippet>::class.java)?.toList() ?: emptyList()
+                _snippets.value = loaded
+            } catch (e: Exception) {
+                _snippets.value = emptyList()
+            }
+        }
+    }
+
+    fun addSnippet(snippet: Snippet) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val file = File(getApplication<Application>().filesDir, SNIPPETS_FILE_NAME)
+            val current = try {
+                val json = file.takeIf { it.exists() }?.readText() ?: "[]"
+                gson.fromJson(json, Array<Snippet>::class.java)?.toMutableList() ?: mutableListOf()
+            } catch (e: Exception) {
+                mutableListOf<Snippet>()
+            }
+            current.add(snippet)
+            val json = gson.toJson(current)
+            file.writeText(json)
+            _snippets.value = current
+        }
+    }
+
+    fun removeSnippet(snippet: Snippet) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val file = File(getApplication<Application>().filesDir, SNIPPETS_FILE_NAME)
+            val current = try {
+                val json = file.takeIf { it.exists() }?.readText() ?: "[]"
+                gson.fromJson(json, Array<Snippet>::class.java)?.toMutableList() ?: mutableListOf()
+            } catch (e: Exception) {
+                mutableListOf<Snippet>()
+            }
+            val newList = current.filterNot {
+                it.postId == snippet.postId && it.content == snippet.content && it.createdAt == snippet.createdAt
+            }
+            val json = gson.toJson(newList)
+            file.writeText(json)
+            _snippets.value = newList
+        }
+    }
+
+    fun clearSnippets() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val file = File(getApplication<Application>().filesDir, SNIPPETS_FILE_NAME)
+            file.writeText("[]")
+            _snippets.value = emptyList()
+        }
+    }
+
+    fun clearFavoritePosts() {
+        viewModelScope.launch(Dispatchers.IO) {
+            dataStore.edit { prefs ->
+                prefs[FAVORITE_POSTS_KEY] = emptySet()
+            }
+            _favoritePosts.value = emptyList()
         }
     }
 }

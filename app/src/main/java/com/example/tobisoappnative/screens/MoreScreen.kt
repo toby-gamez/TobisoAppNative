@@ -131,7 +131,7 @@ fun MoreScreen(navController: NavController, viewModel: MainViewModel = viewMode
                         Column {
                             Text("Oblíbené", style = MaterialTheme.typography.titleMedium)
                             Text(
-                                "Tvé uložené příspěvky",
+                                "Tvé uložené útržky a příspěvky, které nevyuživáš. :(",
                                 style = MaterialTheme.typography.bodySmall
                             )
                         }

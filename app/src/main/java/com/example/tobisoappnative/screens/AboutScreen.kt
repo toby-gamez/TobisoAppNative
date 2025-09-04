@@ -90,7 +90,7 @@ fun AboutScreen(navController: NavController) {
                 modifier = Modifier.size(120.dp)
             )
             Text("Autor: Taneq (Tobias)", style = MaterialTheme.typography.bodyMedium)
-            Text("v1.5", style = MaterialTheme.typography.bodyMedium)
+            Text("v1.6", style = MaterialTheme.typography.bodyMedium)
             Spacer(modifier = Modifier.height(24.dp))
             Divider(
                 color = Color.Gray,

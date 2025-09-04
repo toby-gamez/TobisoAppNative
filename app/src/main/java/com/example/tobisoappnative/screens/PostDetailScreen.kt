@@ -30,6 +30,10 @@ import kotlinx.coroutines.launch
 import androidx.compose.ui.text.style.TextAlign
 import com.google.accompanist.swiperefresh.SwipeRefresh
 import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.ClipboardManager
+import kotlinx.coroutines.delay
+import androidx.compose.ui.platform.LocalContext
 
 val prefixRegex = Regex("^(ml-|sl-|li-|hv-|m-|ch-|f-|pr-|z-)")
 
@@ -51,6 +55,30 @@ fun PostDetailScreen(
     LaunchedEffect(postId) {
         viewModel.loadPostDetail(postId)
         loaded = true
+    }
+
+    val clipboardManager: ClipboardManager = LocalClipboardManager.current
+    var lastClipboardText by remember { mutableStateOf("") }
+    var showCopyDialog by remember { mutableStateOf(false) }
+    var copiedText by remember { mutableStateOf("") }
+    var showSavedSnackbar by remember { mutableStateOf(false) }
+    val postContent = postDetail?.content ?: ""
+
+    // Detekce kopírování přes clipboard
+    LaunchedEffect(postContent) {
+        while (true) {
+            val clipboardText = clipboardManager.getText()?.text ?: ""
+            if (
+                clipboardText.isNotBlank() &&
+                postContent.contains(clipboardText) &&
+                clipboardText != lastClipboardText
+            ) {
+                showCopyDialog = true
+                copiedText = clipboardText
+                lastClipboardText = clipboardText
+            }
+            delay(500)
+        }
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -367,6 +395,60 @@ fun PostDetailScreen(
                     ) {
                         Text(errorText, textAlign = TextAlign.Start)
                     }
+                }
+            }
+        }
+        // Dialog pro uložení útržku
+        if (showCopyDialog) {
+            AlertDialog(
+                onDismissRequest = { showCopyDialog = false },
+                title = { Text("Uložit do útržků?") },
+                text = { Text("Útržky jsou kousky textu, které si uložíte na příště nebo vás zajímají. Možnosti jsou neomezené.") },
+                confirmButton = {
+                    TextButton(onClick = {
+                        val snippet = com.example.tobisoappnative.model.Snippet(
+                            postId = postId,
+                            content = copiedText,
+                            createdAt = System.currentTimeMillis()
+                        )
+                        viewModel.addSnippet(snippet)
+                        showCopyDialog = false
+                        showSavedSnackbar = true
+                    }) {
+                        Text("Ano")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showCopyDialog = false }) {
+                        Text("Ne")
+                    }
+                }
+            )
+        }
+        // Snackbar po uložení útržku
+        if (showSavedSnackbar) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = androidx.compose.ui.Alignment.BottomCenter
+            ) {
+                Snackbar(
+                    action = {
+                        Row {
+                            TextButton(onClick = { showSavedSnackbar = false }) {
+                                Text("Zavřít", textAlign = TextAlign.Start)
+                            }
+                            Spacer(modifier = Modifier.width(8.dp))
+                            TextButton(onClick = {
+                                showSavedSnackbar = false
+                                navController.navigate("favorites")
+                            }) {
+                                Text("Zobrazit", textAlign = TextAlign.Start)
+                            }
+                        }
+                    },
+                    modifier = Modifier.padding(8.dp)
+                ) {
+                    Text("Útržek uložen.", textAlign = TextAlign.Start)
                 }
             }
         }
