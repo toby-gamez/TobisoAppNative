@@ -124,6 +124,15 @@ fun HomeScreen(navController: NavController) {
                     modifier = Modifier.size(150.dp)
                 )
             },
+            actions = {
+                IconButton(onClick = { navController.navigate("streak") }) {
+                    Icon(
+                        imageVector = Icons.Default.Whatshot,
+                        contentDescription = "Streak",
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
+            },
             scrollBehavior = scrollBehavior
         )
 

@@ -26,6 +26,8 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.rememberScrollState
 import kotlinx.coroutines.delay
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Whatshot
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -128,6 +130,15 @@ fun SearchScreen(navController: NavController, searchRequestFocus: androidx.comp
     ) {
         LargeTopAppBar(
             title = { Text("Vyhledávání", style = MaterialTheme.typography.titleLarge) },
+            actions = {
+                IconButton(onClick = { navController.navigate("streak") }) {
+                    Icon(
+                        imageVector = Icons.Default.Whatshot,
+                        contentDescription = "Streak",
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
+            },
             scrollBehavior = scrollBehavior,
         )
 

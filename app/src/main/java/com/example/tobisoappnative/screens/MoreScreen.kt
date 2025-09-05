@@ -20,6 +20,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Whatshot
 import androidx.navigation.NavController
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -47,6 +49,15 @@ fun MoreScreen(navController: NavController, viewModel: MainViewModel = viewMode
     ) {
         LargeTopAppBar(
             title = { Text("Více", style = MaterialTheme.typography.titleLarge) },
+            actions = {
+                IconButton(onClick = { navController.navigate("streak") }) {
+                    Icon(
+                        imageVector = Icons.Default.Whatshot,
+                        contentDescription = "Streak",
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
+            },
             scrollBehavior = scrollBehavior
         )
 
@@ -137,7 +148,6 @@ fun MoreScreen(navController: NavController, viewModel: MainViewModel = viewMode
                         }
                     }
                 }
-
             }
 
             if (!filteredPosts.isEmpty()) {

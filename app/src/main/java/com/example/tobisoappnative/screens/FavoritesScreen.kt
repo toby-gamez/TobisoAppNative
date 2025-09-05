@@ -13,6 +13,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.tobisoappnative.viewmodel.MainViewModel
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Delete
@@ -37,12 +38,19 @@ fun FavoritesScreen(
         }
     }
 
+
+
     Column(modifier = Modifier.fillMaxSize()) {
         LargeTopAppBar(
             title = { Text("Oblíbené") },
             colors = TopAppBarDefaults.largeTopAppBarColors(
                 containerColor = MaterialTheme.colorScheme.surface
-            )
+            ),
+            navigationIcon = {
+                IconButton(onClick = { navController.popBackStack() }) {
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Zpět")
+                }
+            }
         )
         TabRow(
             selectedTabIndex = selectedTab,

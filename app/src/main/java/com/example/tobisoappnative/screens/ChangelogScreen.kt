@@ -26,6 +26,10 @@ import androidx.compose.ui.text.withStyle
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChangelogScreen(navController: NavController) {
+    val version1_7 = listOf(
+        "odstraněn problém se status barem",
+        "přidána řada"
+    )
     val version1_6 = listOf(
         "přidán počet slov a délka čtení pro článek",
         "přidáno gesto pro znovunačtení článku (swipe down)",
