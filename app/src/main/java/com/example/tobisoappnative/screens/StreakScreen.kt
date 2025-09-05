@@ -179,15 +179,22 @@ fun CalendarStreak(
 
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceEvenly
+        horizontalArrangement = Arrangement.Start
     ) {
         weekDays.forEach { weekDay ->
-            Text(
-                text = weekDay,
-                modifier = Modifier.weight(1f),
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.secondary // změna z Color.Gray na secondary barvu
-            )
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .aspectRatio(1f),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = weekDay,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.secondary,
+                    maxLines = 1
+                )
+            }
         }
     }
 
@@ -197,7 +204,7 @@ fun CalendarStreak(
         for (week in days.chunked(7)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly
+                horizontalArrangement = Arrangement.Start
             ) {
                 for (day in week) {
                     val isActive = day.fullDate != null && streakDays.contains(day.fullDate)
@@ -206,31 +213,53 @@ fun CalendarStreak(
 
                     Box(
                         modifier = Modifier
-                            .size(32.dp)
+                            .weight(1f)
+                            .aspectRatio(1f)
                             .padding(2.dp)
-                            .background(
-                                color = when {
-                                    isToday -> MaterialTheme.colorScheme.primary
-                                    isActive -> MaterialTheme.colorScheme.secondary
-                                    else -> if (isCurrentMonth) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f)
-                                },
-                                shape = CircleShape
+                            .then(
+                                if (isToday) Modifier else Modifier
                             ),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(
-                            text = day.dayNumber.toString(),
-                            style = if (isToday) {
-                                MaterialTheme.typography.bodySmall.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color.White
-                                )
-                            } else {
-                                MaterialTheme.typography.bodySmall.copy(
-                                    color = if (isCurrentMonth) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.5f)
+                        if (isToday) {
+                            Surface(
+                                shape = MaterialTheme.shapes.medium,
+                                color = MaterialTheme.colorScheme.primary,
+                                tonalElevation = 2.dp,
+                                modifier = Modifier.fillMaxSize()
+                            ) {
+                                Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                                    Text(
+                                        text = day.dayNumber.toString(),
+                                        style = MaterialTheme.typography.titleMedium.copy(
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color.White
+                                        )
+                                    )
+                                }
+                            }
+                        } else {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(
+                                        color = when {
+                                            isActive -> MaterialTheme.colorScheme.secondary
+                                            isCurrentMonth -> MaterialTheme.colorScheme.secondaryContainer
+                                            else -> MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f)
+                                        },
+                                        shape = CircleShape
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = day.dayNumber.toString(),
+                                    style = MaterialTheme.typography.titleMedium.copy(
+                                        color = if (isCurrentMonth) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.5f)
+                                    )
                                 )
                             }
-                        )
+                        }
                     }
                 }
             }
