@@ -28,7 +28,8 @@ import androidx.compose.ui.text.withStyle
 fun ChangelogScreen(navController: NavController) {
     val version1_7 = listOf(
         "odstraněn problém se status barem",
-        "přidána řada"
+        "přidána řada",
+        "přidány notifikace pro učení"
     )
     val version1_6 = listOf(
         "přidán počet slov a délka čtení pro článek",
