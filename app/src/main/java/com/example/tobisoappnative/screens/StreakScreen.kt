@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Whatshot
@@ -19,6 +20,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.tobisoappnative.cancelStreakNotifications
 import com.example.tobisoappnative.viewmodel.MainViewModel
 import java.text.SimpleDateFormat
 import java.util.*
@@ -56,7 +58,7 @@ fun StreakScreen(
             title = { Text("Řada") },
             navigationIcon = {
                 IconButton(onClick = { navController.popBackStack() }) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Zpět")
+                    Icon(Icons.Filled.ArrowUpward, contentDescription = "Zpět")
                 }
             }
         )
@@ -402,6 +404,7 @@ fun addTodayToStreak(context: Context) {
         val days = existingDays.toMutableSet()
         days.add(today)
         prefs.edit().putStringSet("days", days).apply()
+        cancelStreakNotifications(context)
     }
 }
 
